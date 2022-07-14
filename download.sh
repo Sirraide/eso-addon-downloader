@@ -21,17 +21,12 @@ perform_download() {
     local link
     local dlpage
 
-    #link=$(echo "$res" | grep -P -m1 '/downloads/landing.php')
-    #link=$(echo "$res" | sed -E 's|.*?<a href="(/downloads/landing\.php.*?)">.*|\1|')
-    #link=$(perl '-MURI::Escape' -e 'print uri_unescape($ARGV[0])' "$link")
-
     # Extract the download link.
     link=$(echo "$res" | htmlq a -a href | grep '/downloads/landing.php' | head -n1)
 
     # Download the download page.
     info "Found \033[32m$1\033[33m at \033[32m$link\033[33m. Obtaining download link..."
     dlpage=$(curl -L -s "https://www.esoui.com$link")
-    #echo "$dlpage" > dlpage.html # DEBUG
 
     # Extract the download link.
     link=$(echo "$dlpage" | htmlq 'div.manuallink a' -a href)
@@ -47,7 +42,6 @@ download() {
     # Get the addon page.
     info "Searching for \033[32m$1\033[33m..."
 	res="$(curl -L -s "https://www.esoui.com/downloads/search.php?search=$1")"
-    #echo "$res" > res.html # DEBUG
 
     # Perform the download if we're already on the addon's page.
     if echo "$res" | grep -P -m1 -q '/downloads/landing.php'; then
