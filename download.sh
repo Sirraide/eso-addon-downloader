@@ -99,3 +99,16 @@ for addon in "${addons[@]}"; do
     download "$addon"
     done=$((done + 1))
 done
+
+# Unzip them and remove the zip files.
+done=1
+echo -e "\033[33mUnzipping \033[34m$total\033[33m addons"
+for z in *.zip*; do
+    info "Unzipping \033[32m$z\033[33m..."
+    unzip "$z"
+
+    info "Removing \033[32m$z\033[33m..."
+    rm "$z"
+
+    done=$((done + 1))
+done
