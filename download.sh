@@ -70,12 +70,14 @@ if ! test -f "$1"; then die "Not a valid path:\033[33m $1"; fi
 d=$(date '+downloads %d-%m-%y')
 
 # If the directory already exists, prompt the user if they want to overwrite it.
-echo -e -n "\033[33mDirectory \033[32m$d\033[33m already exists. Overwrite? (\033[32my\033[33m/\033[31mN\033[33m) \033[m"
-read yn
-case $yn in
-    [Yy]* ) rm -rf "./$d" ;;
-    * ) die "Aborted" ;;
-esac
+if test -e "./$d"; then
+    echo -e -n "\033[33mDirectory \033[32m$d\033[33m already exists. Overwrite? (\033[32my\033[33m/\033[31mN\033[33m) \033[m"
+    read yn
+    case $yn in
+        [Yy]* ) rm -rf "./$d" ;;
+        * ) die "Aborted" ;;
+    esac
+fi
 
 # Create the directory.
 mkdir -p "./$d"
