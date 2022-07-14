@@ -62,6 +62,9 @@ download() {
     err "Could not find \033[32m$1"
 }
 
+# Make sure we have a file to read addon names from.
+if test $# -lt 1; then die "Usage:\033[33m $0\033[32m <file>"; fi
+if ! test -f "$1"; then die "Not a valid path:\033[33m $1"; fi
 
 # Create a new directory for today's downloads.
 d=$(date '+downloads %d-%m-%y')
@@ -70,7 +73,7 @@ cd "$d"
 
 # Read the addon names from stdin.
 addons=()
-while IFS= read -r line; do addons+=("$line"); done
+while IFS= read -r line; do addons+=("$line"); done < "$1"
 total="${#addons[@]}"
 
 # Print what we're downloading.
