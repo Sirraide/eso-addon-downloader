@@ -66,10 +66,19 @@ download() {
 if test $# -lt 1; then die "Usage:\033[33m $0\033[32m <file>"; fi
 if ! test -f "$1"; then die "Not a valid path:\033[33m $1"; fi
 
-# Create a new directory for today's downloads.
+# The directory for today's downloads.
 d=$(date '+downloads %d-%m-%y')
-mkdir -p "$d"
-cd "$d"
+
+# If the directory already exists, prompt the user if they want to overwrite it.
+echo -e -n "\033[33mDirectory \033[32m$d\033[33m already exists. Overwrite? (\033[32my\033[33m/\033[31mN\033[33m) \033[m"
+read yn
+case $yn in
+    [Yy]* ) rm -rf "./$d" ;;
+    * ) die "Aborted" ;;
+esac
+
+# Create the directory.
+mkdir -p "./$d"
 
 # Read the addon names from stdin.
 addons=()
@@ -85,6 +94,7 @@ done
 echo -e "\033[m"
 
 # Download each addon.
+cd "./$d"
 for addon in "${addons[@]}"; do
     download "$addon"
     done=$((done + 1))
