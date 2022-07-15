@@ -3,8 +3,12 @@ set -eu
 
 done=1
 total=0
+failed=()
 
-die() {
+deps_ptr=0
+deps=()
+
+err() {
 	echo -e "\033[31m[$done / $total] Error: $1\033[m"
 }
 
@@ -22,14 +26,16 @@ perform_download() {
     local dlpage
 
     # Extract the download link.
-    link=$(echo "$res" | htmlq a -a href | grep '/downloads/landing.php' | head -n1)
+    link="$(echo "$res" | htmlq a -a href | grep '/downloads/landing.php' | head -n1)"
 
     # Download the download page.
     info "Found \033[32m$1\033[33m at \033[32m$link\033[33m. Obtaining download link..."
-    dlpage=$(curl -L -s "https://www.esoui.com$link")
+    link="${link/ /%20}"
+    dlpage="$(curl -L -s "https://www.esoui.com$link")"
 
     # Extract the download link.
-    link=$(echo "$dlpage" | htmlq 'div.manuallink a' -a href)
+    link="$(echo "$dlpage" | htmlq 'div.manuallink a' -a href)"
+    link="${link/ /%20}"
 
     # Download the file.
     info "Downloading \033[32m$link\033[33m..."
@@ -38,10 +44,13 @@ perform_download() {
 
 download() {
 	local res
+	local link
 
     # Get the addon page.
     info "Searching for \033[32m$1\033[33m..."
-	res="$(curl -L -s "https://www.esoui.com/downloads/search.php?search=$1")"
+    link="$1"
+    link="${link/ /%20}"
+	res="$(curl -L -s "https://www.esoui.com/downloads/search.php?search=$link")"
 
     # Perform the download if we're already on the addon's page.
     if echo "$res" | grep -P -m1 -q '/downloads/landing.php'; then
@@ -53,13 +62,15 @@ download() {
     if echo "$res" | grep -P -m1 -q 'class="alt1"'; then
         info "Search returned multiple results. Using the first one..."
         res="$(echo "$res" | htmlq '.alt1 a' -a href | head -n 1)"
-        res=$(curl -L -s "https://www.esoui.com/downloads/$res")
+        res="${res/ /%20}"
+        res="$(curl -L -s "https://www.esoui.com/downloads/$res")"
 
         perform_download "$1" "$res"
         return
     fi
 
     err "Could not find \033[32m$1"
+    failed+=("$1")
 }
 
 # Make sure we have a file to read addon names from.
@@ -104,7 +115,7 @@ done
 
 # Unzip them and remove the zip files.
 done=1
-echo -e "\033[33mUnzipping \033[34m$total\033[33m addons"
+info "\033[33mUnzipping \033[34m$total\033[33m addons"
 for z in *.zip*; do
     info "Unzipping \033[32m$z\033[33m..."
     unzip "$z"
@@ -114,3 +125,15 @@ for z in *.zip*; do
 
     done=$((done + 1))
 done
+
+# Print a summary.
+info "\033[33mDone!\033[m"
+info "\033[33m $((total - ${#failed[@]})) / $total addons downloaded successfully.\033[m"
+if test ${#failed[@]} -gt 0; then
+    echo -e -n "\033[31m[Error] Failed to download "
+    for addon in "${!addons[@]}"; do
+        if test "$addon" -ne 0; then echo -n ", "; fi
+        echo -e -n "\033[32m${addons[$addon]}\033[31m";
+    done
+    echo -e "\033[m"
+fi
